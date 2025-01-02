@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { data, useLocation, useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import { FaUsers } from "react-icons/fa";
 import MessageComponent from "../components/MessageComponent";
@@ -24,6 +24,14 @@ const Project = () => {
   const [project, setProject] = useState({});
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
+  // Ref for scrolling to the bottom
+  const messagesEndRef = useRef(null);
+
+  // Function to scroll to the bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const getProjectDetails = async () => {
     axios
       .get(`/projects/${id}`, {
@@ -31,7 +39,6 @@ const Project = () => {
       })
       .then((res) => {
         setProject(res.data.project);
-        // setMessages(res.data.messages);
       })
       .catch((error) => {
         console.log(error);
@@ -40,22 +47,36 @@ const Project = () => {
 
   useEffect(() => {
     getProjectDetails();
-    initializeSocket(project._id);
+    initializeSocket(id);
 
+    // Receive messages and scroll to bottom
     receiveMessage("project-message", (data) => {
-      console.log(data);
+      setMessages((prevMessages) => [...prevMessages, data]);
+      scrollToBottom(); // Scroll to the latest message
     });
   }, [id]);
 
+  useEffect(() => {
+    // Scroll to the bottom whenever messages are updated
+    scrollToBottom();
+  }, [messages]); // Trigger scroll on message update
+
   const handleSendMessage = () => {
     if (message.trim()) {
+      // Send message to socket
       sendMessage("project-message", {
         message,
-        sender: user._id,
+        sender_id: user._id,
+        sender_email: user.email,
       });
-      setMessages([...messages, message]);
-      console.log("Message sent:", message);
+
+      // Add the sent message to the chat and scroll to bottom
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { message, sender_id: user._id, sender_email: user.email },
+      ]);
       setMessage("");
+      scrollToBottom(); // Scroll after sending the message
     }
   };
 
@@ -79,11 +100,7 @@ const Project = () => {
           }
         )
         .then((res) => {
-          //   setProject((prevProject) => ({
-          //     ...prevProject,
-          //     users: [...prevProject.users, ...users],
-          //   }));
-          getProjectDetails();
+          getProjectDetails(); // Update project details after adding users
           toast.success("Users added successfully");
         })
         .catch((err) => {
@@ -128,7 +145,11 @@ const Project = () => {
         </div>
 
         {/* Messages Section */}
-        <MessageComponent messages={messages} />
+        <div className="flex-grow overflow-y-auto p-4">
+          <MessageComponent messages={messages} />
+          {/* Ref for scrolling to the bottom */}
+          <div ref={messagesEndRef} />
+        </div>
 
         {/* Input Field at Bottom */}
         <div className="mt-auto mr-2 ml-2 pb-4 border-t border-gray-300 flex">

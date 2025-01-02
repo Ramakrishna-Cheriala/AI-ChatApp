@@ -81,7 +81,7 @@ const Drawer = ({ isOpen, onClose, users, projectId, addUsers }) => {
       <div
         className={`fixed inset-y-0 left-0 w-1/4 bg-gray-700 shadow-lg border-r border-gray-300 transition-transform transform ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        } z-50`}
         onKeyDown={handleKeyPress}
         tabIndex={0}
       >
