@@ -4,8 +4,9 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Home from "../pages/Home";
 import { Toaster } from "react-hot-toast";
-import Project from "../pages/Project";
+// import Project from "../pages/Project";
 import UserAuth from "../Auth/UserAuth";
+import Messages from "../pages/Messages";
 
 const AppRoutes = () => {
   return (
@@ -18,17 +19,12 @@ const AppRoutes = () => {
               <Home />
             </UserAuth>
           }
-        />
+        >
+          {/* Nested route for Messages */}
+          <Route path="chat/:id" element={<Messages />} />
+        </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route
-          path="/:id"
-          element={
-            <UserAuth>
-              <Project />
-            </UserAuth>
-          }
-        />
       </Routes>
     </BrowserRouter>
   );

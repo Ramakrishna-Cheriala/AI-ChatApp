@@ -3,7 +3,7 @@ import morgan from "morgan";
 import connect from "./db/db.js";
 import "dotenv/config";
 import userRoutes from "./routes/user.routes.js";
-import projectRoutes from "./routes/project.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use("/users", userRoutes);
-app.use("/projects", projectRoutes);
+app.use("/chats", chatRoutes);
 app.use("/ai", aiRoutes);
 
 app.get("/", (req, res) => {

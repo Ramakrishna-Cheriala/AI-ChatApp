@@ -1,6 +1,7 @@
 import React from "react";
 import { useUser } from "../context/user.context";
 import Markdown from "markdown-to-jsx";
+import { format } from "date-fns";
 
 const MessageComponent = ({ messages }) => {
   const { user } = useUser();
@@ -11,24 +12,34 @@ const MessageComponent = ({ messages }) => {
           <div
             key={index}
             className={`chat ${
-              msg.sender_id === user._id ? "chat-end" : "chat-start"
+              msg.sender?._id === user._id && !msg.isAI
+                ? "chat-end"
+                : "chat-start"
             }`}
           >
             <div
               className={`chat-bubble ${
-                msg.sender_id === user._id
+                msg.sender._id === user._id && !msg.isAI
                   ? "bg-blue-500 text-white"
+                  : msg.isAI
+                  ? "bg-gray-950 text-white "
                   : "bg-gray-200 text-gray-800"
               } whitespace-pre-wrap break-words`}
             >
-              <div className={`text-xs  mt-1`}>{msg.sender_email}</div>
-              {msg.sender_email === "AI" ? (
-                <Markdown>{msg.message}</Markdown>
+              <div className={`text-xs  mt-1`}>
+                {msg.isAI ? <>AI</> : <>{msg.sender.email}</>}
+              </div>
+              {msg.isAI ? (
+                <div className="overflow-x-auto">
+                  <Markdown>{msg.content}</Markdown>
+                </div>
               ) : (
-                <div>{msg.message}</div>
+                <div>{msg.content}</div>
               )}
 
-              <div className="text-xs  mt-1 float-end">17-02-2025 12:00</div>
+              <div className="text-xs  mt-1 float-end">
+                {format(new Date(msg.sentAt), "dd-MM-yyyy hh:mm a")}
+              </div>
             </div>
           </div>
         ))

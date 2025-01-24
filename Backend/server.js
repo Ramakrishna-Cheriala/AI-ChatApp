@@ -3,7 +3,7 @@ import app from "./app.js";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import Project from "./models/project.model.js";
+import Chat from "./models/chat.model.js";
 import { generateResult } from "./services/ai.service.js";
 
 const port = process.env.PORT || 3000;
@@ -21,13 +21,16 @@ io.use(async (socket, next) => {
       socket.handshake.auth?.token ||
       socket.handshake.headers.authorization?.split(" ")[1];
 
-    const projectId = socket.handshake.query.projectId;
+    const chatId = socket.handshake.query.chatId;
 
-    if (!mongoose.Types.ObjectId.isValid(projectId)) {
-      return next(new Error("Invalid project ID"));
+    // console.log("chatId: ", chatId);
+
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+      return next(new Error("Invalid chat ID"));
     }
 
-    socket.project = await Project.findById(projectId);
+    socket.chat = await Chat.findById(chatId);
+    // console.log("scoket chatId: ", socket.chat);
 
     if (!token) {
       return next(new Error("Authentication error"));
@@ -46,26 +49,35 @@ io.use(async (socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  socket.roomId = socket.project._id.toString();
+  socket.roomId = socket.chat._id.toString();
   console.log("a user connected");
   socket.join(socket.roomId);
 
-  socket.on("project-message", async (data) => {
-    console.log(data);
-    const message = data.message;
+  socket.on("chat-message", async (data) => {
+    console.log("data: ", data);
+    const message = data.content;
+    console.log("message: ", message);
 
     const aiIsPresentInMessage = message.includes("@ai");
 
-    socket.broadcast.to(socket.roomId).emit("project-message", data);
+    socket.broadcast.to(socket.roomId).emit("chat-message", data);
 
     if (aiIsPresentInMessage) {
-      const prompt = message.replace("@ai", "");
-      const result = await generateResult(prompt);
+      console.log("ai is responding");
+      const prompt = message?.replace("@ai", "");
+      const result = await generateResult(
+        prompt,
+        socket.roomId,
+        data.sender._id
+      );
 
-      io.to(socket.roomId).emit("project-message", {
-        message: result,
-        sender_id: "ai",
-        sender_email: "AI",
+      io.to(socket.roomId).emit("chat-message", {
+        chat: socket.roomId,
+        content: result,
+        isAI: true,
+        sender: data.sender,
+        receiver: null,
+        sentAt: new Date(),
       });
     }
   });
